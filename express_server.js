@@ -47,10 +47,21 @@ app.get('/url/:shortURL', (req, res) => {
   res.render('urls_show', templateVars);
 });
 
+
+app.post(`urls/:shortURL/delete`, (req, res) => {
+  // GET short URL 
+  // Use the short URL to delete the data from database
+  // redirect to urls_show
+    delete urlDatabase[req.params.shortURL]
+    res.redirect("/urls")
+  });
+  
 app.get("/u/:shortURL", (req, res) => {
   longURL = urlDatabase[req.params.shortURL];
   res.redirect(longURL);
 });
+
+
 
 app.get("/", (req, res) => {
   res.send("Hello!");
@@ -58,7 +69,7 @@ app.get("/", (req, res) => {
 
 app.get('/urls.json', (req, res) => {
   res.json(urlDatabase);
-});
+})
 
 app.get('/hello', (req, res) => {
   res.send("<html><body>Hello <b>World</b></body></html>\n");
