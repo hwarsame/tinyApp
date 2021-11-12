@@ -10,6 +10,18 @@ app.use(cookieParser())
 
 app.set('view engine', 'ejs');
 
+const users = {
+  "User1": {
+    id:'User 1',
+    email: 'chicken@gmail.com',
+    password: 'psp'
+  },
+  "User2": {
+    id:'User 2',
+    email: 'veggies@gmail.com',
+    password: 'ps2'
+  }
+};
 
 
 const urlDatabase = {
@@ -27,7 +39,7 @@ function generateRandomString() {
 
 app.get('/urls', (req, res) => {
   const templateVars = { urls: urlDatabase, user: req.cookies.userID};
-  console.log('>>>>>>>>>>>>>>>>>>>>>>>>>', req.cookies.userID)
+  // console.log('>>>>>>>>>>>>>>>>>>>>>>>>>', req.cookies.userID)
   res.render('urls_index', templateVars);
 });
 
@@ -36,13 +48,22 @@ app.post("/urls", (req, res) => {
   let shortUrl = generateRandomString();
   //Adds both urls to database, while shortURL being the random generated one
   urlDatabase[shortUrl] = longUrl;
-  const templateVars = {shortURL  :shortUrl, longURL :longUrl, user: req.cookies.userID};
-  res.render('urls_show', templateVars);
+  const templateVars = {shortURL  :shortUrl, longURL :longUrl, user: req.cookies.users[id]};
+  res.render('urls_show', templateVars); 
   // res.redirect('/url/:shortURL');
 });
+// Registering a new user
+app.post('/register', (req, res) => {
+  let userIdentity = generateRandomString();
+    user_id = users.id;
+    user_id = 'User'+ userIdentity;
+   res.cookie(user_id)
+   console.log(user_id)
+   res.redirect('/urls');
+})
 
 app.get("/urls/new", (req, res) => {
-  res.render("urls_new", { user: ''});
+  res.render("urls_new", { user: ''}); 
 });
 
 app.get('/urls/:shortURL', (req, res) => {
@@ -73,17 +94,29 @@ app.get("/u/:shortURL", (req, res) => {
   longURL = urlDatabase[req.params.shortURL];
   res.redirect(longURL);
 });
-
+//Login to tinyApp
 app.post('/login', (req, res) => {
  const cookieUser = req.body.username;
  res.cookie('userID', cookieUser);   
  res.redirect('/urls');
   // console.log('==========', req)
 })
-
+//Log out of TinyApp
 app.post('/logout', (req, res) => {
   res.clearCookie('userID');
   res.redirect('/urls');
+})
+
+//Register button
+app.post('/register', (req, res) => {
+  res.redirect('/urls_registration')
+})
+
+
+//Register an account page should show up
+app.get('/register', (req, res) => {
+  res.render('urls_registration',{user:''});
+  
 })
 
 app.get("/", (req, res) => {
