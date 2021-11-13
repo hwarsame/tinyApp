@@ -12,12 +12,12 @@ app.set('view engine', 'ejs');
 
 const users = {
   "User1": {
-    id:'User 1',
+    id:'User1',
     email: 'chicken@gmail.com',
     password: 'psp'
   },
   "User2": {
-    id:'User 2',
+    id:'User2',
     email: 'veggies@gmail.com',
     password: 'ps2'
   }
@@ -38,7 +38,7 @@ function generateRandomString() {
 }
 
 app.get('/urls', (req, res) => {
-  const templateVars = { urls: urlDatabase, user: req.cookies.userID};
+  const templateVars = { urls: urlDatabase, user: req.cookies.user_id};
   // console.log('>>>>>>>>>>>>>>>>>>>>>>>>>', req.cookies.userID)
   res.render('urls_index', templateVars);
 });
@@ -48,17 +48,24 @@ app.post("/urls", (req, res) => {
   let shortUrl = generateRandomString();
   //Adds both urls to database, while shortURL being the random generated one
   urlDatabase[shortUrl] = longUrl;
-  const templateVars = {shortURL  :shortUrl, longURL :longUrl, user: req.cookies.users[id]};
+  const templateVars = {shortURL  :shortUrl, longURL :longUrl, user: req.cookies.user_id};
   res.render('urls_show', templateVars); 
   // res.redirect('/url/:shortURL');
 });
 // Registering a new user
 app.post('/register', (req, res) => {
   let userIdentity = generateRandomString();
-    user_id = users.id;
-    user_id = 'User'+ userIdentity;
-   res.cookie(user_id)
-   console.log(user_id)
+    const usr = {
+      id: userIdentity,
+      email: req.body.email,
+      password: req.body.password
+    }
+    // console.log('>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>',req.body)
+    // user_id = users.id;
+    // user_id = 'User'+ userIdentity;
+    const cookieUser = usr
+    res.cookie('user_id', cookieUser); 
+   console.log(cookieUser);
    res.redirect('/urls');
 })
 
@@ -67,7 +74,7 @@ app.get("/urls/new", (req, res) => {
 });
 
 app.get('/urls/:shortURL', (req, res) => {
-  const templateVars = { shortURL: req.params.shortURL, longURL: urlDatabase[req.params.shortURL], user: req.cookies.userID};
+  const templateVars = { shortURL: req.params.shortURL, longURL: urlDatabase[req.params.shortURL], user: req.cookies.user_id};
   res.render('urls_show', templateVars);
 });
 
@@ -96,20 +103,21 @@ app.get("/u/:shortURL", (req, res) => {
 });
 //Login to tinyApp
 app.post('/login', (req, res) => {
+  
  const cookieUser = req.body.username;
- res.cookie('userID', cookieUser);   
+ res.cookie('user_id', cookieUser);   
  res.redirect('/urls');
   // console.log('==========', req)
 })
 //Log out of TinyApp
 app.post('/logout', (req, res) => {
-  res.clearCookie('userID');
+  res.clearCookie('user_id');
   res.redirect('/urls');
 })
 
 //Register button
 app.post('/register', (req, res) => {
-  res.redirect('/urls_registration')
+  res.redirect('/urls')
 })
 
 
