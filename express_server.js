@@ -83,15 +83,13 @@ app.post('/register', (req, res) => {
         };
         users[id] = user;
         const cookieUser = user
-        res.cookie("user_id", cookieUser);
+        res.cookie("user_id", {id: id, email: email});
         //console.log to see output
         console.log(req.cookies.user_id);
         console.log(users);
         res.redirect("/urls");
-        
-;    
       
-    }
+    };
   
 });
 
