@@ -10,24 +10,36 @@ app.use(cookieParser())
 
 app.set('view engine', 'ejs');
 
-const users = {
-  "User1": {
-    id:'User1',
-    email: 'chicken@gmail.com',
-    password: 'psp'
-  },
-  "User2": {
-    id:'User2',
-    email: 'veggies@gmail.com',
-    password: 'ps2'
-  }
-};
-
 
 const urlDatabase = {
   "b2xVn2": "http://www.lighthouselabs.ca",
   "9sm5xK": "http://www.google.com"
 };
+//Accounts which are registered
+const users = { 
+  "userRandomID": {
+    id: "userRandomID", 
+    email: "user@example.com", 
+    password: "purple-monkey-dinosaur"
+  },
+ "user2RandomID": {
+    id: "user2RandomID", 
+    email: "user2@example.com", 
+    password: "helloworld"
+  }
+}
+//email checker function
+const emailChecker = function(email){
+for (keys in users){
+  if (users[keys].email === email){
+    return users[keys]
+  }
+}
+  return null;
+}
+
+
+//will generate a random string of up to 6 characters for cookies, and shortURL
 function generateRandomString() {
   let string = '';
   const chars = '1234567890ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz';
@@ -55,19 +67,33 @@ app.post("/urls", (req, res) => {
 // Registering a new user
 app.post('/register', (req, res) => {
   let userIdentity = generateRandomString();
-    const usr = {
-      id: userIdentity,
-      email: req.body.email,
-      password: req.body.password
+     const id = userIdentity
+     const email = req.body.email
+     const password = req.body.password
+    
+    if (!email || !password){
+      res.status(400).send('Please use a valid email or password');
+    } else if (emailChecker(email)){
+      res.status(400).send('There is already an existing account with that email address.');
+    } else {
+      const user = {
+        id : id,
+        email : email,
+        password : password
+        };
+        users[id] = user;
+        const cookieUser = user
+        res.cookie("user_id", cookieUser);
+        //console.log to see output
+        console.log(req.cookies.user_id);
+        console.log(users);
+        res.redirect("/urls");
+        
+;    
+      
     }
-    // console.log('>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>',req.body)
-    // user_id = users.id;
-    // user_id = 'User'+ userIdentity;
-    const cookieUser = usr
-    res.cookie('user_id', cookieUser); 
-   console.log(cookieUser);
-   res.redirect('/urls');
-})
+  
+});
 
 app.get("/urls/new", (req, res) => {
   res.render("urls_new", { user: ''}); 
