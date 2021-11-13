@@ -28,7 +28,7 @@ const users = {
     password: "helloworld"
   }
 }
-//email checker function
+//email checker function (returns a user object for the given email)
 const emailChecker = function(email){
 for (keys in users){
   if (users[keys].email === email){
@@ -38,6 +38,14 @@ for (keys in users){
   return null;
 }
 
+// const getUserEmail = (email, database) => {
+//   for (let user in database){
+//     if (database[user].email === email){
+//       return database[user];
+//     }
+//   }
+//   return undefined;
+// };
 
 //will generate a random string of up to 6 characters for cookies, and shortURL
 function generateRandomString() {
@@ -125,19 +133,47 @@ app.get("/u/:shortURL", (req, res) => {
   longURL = urlDatabase[req.params.shortURL];
   res.redirect(longURL);
 });
-//Login to tinyApp
-app.post('/login', (req, res) => {
-  
- const cookieUser = req.body.username;
- res.cookie('user_id', cookieUser);   
- res.redirect('/urls');
-  // console.log('==========', req)
-})
+
 //Log out of TinyApp
 app.post('/logout', (req, res) => {
   res.clearCookie('user_id');
   res.redirect('/urls');
 })
+
+
+//Login page should show
+app.get('/login', (req, res) => {
+  const templateVars = {user: null}
+  res.render('urls_login', templateVars);
+})
+
+//Log user into tinyApp
+app.post('/login', (req, res) => {
+  const email = req.body.email
+  const password = req.body.password
+  const user = emailChecker(email);
+  if (user) {
+    // console.log('>>>>>>>>>>>>>>>>>>>>>>>>>',password, user.password);
+    if (password !== user.password){
+      res.send('Invalid password')
+    }
+    else {
+        res.cookie("user_id", user);
+        res.redirect("/urls");
+    }
+  }
+  else {
+    res.send('Invalid login credentials')
+  }
+})
+
+//Logout button 
+app.get('/logout', (req, res)=> {
+  res.clearCookie('user_id');
+  res.redirect('/urls');
+})
+
+
 
 //Register button
 app.post('/register', (req, res) => {
@@ -147,7 +183,7 @@ app.post('/register', (req, res) => {
 
 //Register an account page should show up
 app.get('/register', (req, res) => {
-  res.render('urls_registration',{user:''});
+  res.render('urls_registration',{user: null});
   
 })
 

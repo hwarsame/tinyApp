@@ -7,20 +7,22 @@
     <div class="collapse navbar-collapse" id="navbarNavAltMarkup">
       <div class="navbar-nav">
         <a class="nav-item nav-link" href="/urls">My URLs</a>
-        <a class="nav-item nav-link" href="/urls/new">Create New URL</a>
-        <a class ="nav-item button" href="/register"> <button type = "submit" button class="btn btn-primary">Register for an account here</button></a>
+        <a class="nav-item nav-link" href="/urls/new">Create New URL</a> 
       </div>
     </div>
     <% if  (user) { %>
-    <%=user.email%>
-    <form method="POST" action="/logout">
-    <input type="submit" value="log out">
-    </form>
+      <a class = "navbar-brand" ><p>Logged in as:   <%=user.email%></p> 
+      </a>
+    <a class = "navbar-brand" href="/logout"> <button type ="submit" button class = "btn-primary"> Log Out</button></a>
     <% }  else { %>
-      <form method="POST" action="/login" > 
+      <!-- Login button here -->
+      <a class = "navbar-brand" href = "/login"> <button type = "submit" button class= "btn-primary"> Log In</button></a>
+      <!-- <form method="POST" action="/login" > 
         <input id="email" name="username" placeholder="email"  
         ><button type ="submit"> Log In</button> 
-      </form>
+      </form> -->
+      <!-- Register Button here -->
+      <a class ="navbar-brand" href="/register"> <button type = "submit" button class="btn btn-primary">Register for an account here</button></a>
     <% } %>
 
     
