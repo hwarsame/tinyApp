@@ -4,16 +4,24 @@ const app = express();
 const PORT = 8000; // default port 8000
 const bodyParser = require("body-parser");
 const cookieParser = require('cookie-parser');
+const cookieSession = require('cookie-session');
 app.use(bodyParser.urlencoded({ extended: true }));
 
 app.use(cookieParser());
+// app.use(cookieSession());
 
 app.set('view engine', 'ejs');
 
-
+// Our database for URLS
 const urlDatabase = {
-  "b2xVn2": "http://www.lighthouselabs.ca",
-  "9sm5xK": "http://www.google.com"
+  b6UTxQ: {
+      longURL: "https://www.tsn.ca",
+      userID: "aJ48lW"
+  },
+  i3BoGr: {
+      longURL: "https://www.google.ca",
+      userID: "aJ48lW"
+  }
 };
 //Accounts which are registered
 const users = {
@@ -58,17 +66,23 @@ function generateRandomString() {
 }
 
 app.get('/urls', (req, res) => {
+  const user_id = req.cookies.user_id
+  if (!user_id){
+    res.status(401).send('You must be logged in to view the urls')
+  }
+  // const user = users[user_id];;
   const templateVars = { urls: urlDatabase, user: req.cookies.user_id};
-  // console.log('>>>>>>>>>>>>>>>>>>>>>>>>>', req.cookies.userID)
+  console.log('>>>>>>>>>>>>>>>>>>>>>>>>>1123333333300000', urlDatabase)
   res.render('urls_index', templateVars);
 });
 
 app.post("/urls", (req, res) => {
-  let longUrl = req.body.longURL;
+  let longURL = req.body.longURL;
   let shortUrl = generateRandomString();
   //Adds both urls to database, while shortURL being the random generated one
-  urlDatabase[shortUrl] = longUrl;
-  const templateVars = {shortURL  :shortUrl, longURL :longUrl, user: req.cookies.user_id};
+  urlDatabase[shortUrl] = {longURL, userID: req.cookies.user_id.id};
+  console.log('>>>>>>>>>>>>>>>>>>>>', urlDatabase);
+  const templateVars = {shortURL: shortUrl, longURL: urlDatabase[shortUrl].longURL, user: req.cookies.user_id};
   res.render('urls_show', templateVars);
   // res.redirect('/url/:shortURL');
 });
@@ -102,11 +116,23 @@ app.post('/register', (req, res) => {
 });
 
 app.get("/urls/new", (req, res) => {
-  res.render("urls_new", { user: ''});
+  const templateVars = {user: null}
+  let user = req.cookies.user_id
+  if (!user){
+    return res.redirect('/login')
+  } 
+    templateVars.user = user
+    res.render("urls_new", templateVars);
+    return;
 });
 
 app.get('/urls/:shortURL', (req, res) => {
+  const user = req.cookies.user_id 
+  if (!user){
+    res.status(401).send('You must be logged in to access this page.')
+  }
   const templateVars = { shortURL: req.params.shortURL, longURL: urlDatabase[req.params.shortURL], user: req.cookies.user_id};
+  console.log('>>>>>>>>>>>>>>>>>>>>>>>>!!!!!!!!!', urlDatabase);
   res.render('urls_show', templateVars);
 });
 
@@ -130,7 +156,7 @@ app.post('/urls/:shortURL', (req, res) => {
 });
 
 app.get("/u/:shortURL", (req, res) => {
-  longURL = urlDatabase[req.params.shortURL];
+  longURL = urlDatabase[req.params.shortURL].longURL;
   res.redirect(longURL);
 });
 
