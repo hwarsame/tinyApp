@@ -1,4 +1,3 @@
-const { request } = require("express");
 const express = require("express");
 const app = express();
 const PORT = 8000; // default port 8000
@@ -6,26 +5,27 @@ const bodyParser = require("body-parser");
 // const cookieParser = require('cookie-parser');
 const cookieSession = require('cookie-session');
 const bcrypt = require('bcryptjs');
+const {getUserByEmail, generateRandomString, urlsForUser} = require('./helper');
 
 app.use(bodyParser.urlencoded({ extended: true }));
 
 
- app.use(cookieSession({
-   name: 'session',
-   keys: ['cookiesEncrypt']
- }));
+app.use(cookieSession({
+  name: 'session',
+  keys: ['cookiesEncrypt']
+}));
 
 app.set('view engine', 'ejs');
 
 // Our database for URLS
 const urlDatabase = {
   b6UTxQ: {
-      longURL: "https://www.tsn.ca",
-      userID: "aJ48lW"
+    longURL: "https://www.tsn.ca",
+    userID: "aJ48lW"
   },
   i3BoGr: {
-      longURL: "https://www.google.ca",
-      userID: "aJ48lW"
+    longURL: "https://www.google.ca",
+    userID: "aJ48lW"
   }
 };
 //Accounts which are registered
@@ -33,50 +33,21 @@ const users = {
   "userRandomID": {
     id: "userRandomID",
     email: "user@example.com",
-    password: "purple-monkey-dinosaur"
+    password: bcrypt.hashSync("purple-monkey-dinosaur", 10)
   },
   "user2RandomID": {
     id: "user2RandomID",
     email: "user2@example.com",
-    password: "helloworld"
+    password: bcrypt.hashSync("helloworld", 10)
   }
 };
-//email checker function (returns a user object for the given email)
-const emailChecker = function(email) {
-  for (keys in users) {
-    if (users[keys].email === email) {
-      return users[keys];
-    }
-  }
-  return null;
-};
-
-const urlsForUser = function(id, urlDatabase) {
-  let userUrls = {};
-  for (const shortURL in urlDatabase) {
-    if (urlDatabase[shortURL].userID=== id) {
-      userUrls[shortURL] = urlDatabase[shortURL];
-    }
-  }
-  return userUrls;
-};
-
-//will generate a random string of up to 6 characters for cookies, and shortURL
-function generateRandomString() {
-  let string = '';
-  const chars = '1234567890ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz';
-  for (let i = 0; i <= 6; i++) {
-    string += chars.charAt(Math.floor(Math.random() * chars.length));
-  }
-  return string;
-}
 
 app.get('/urls', (req, res) => {
-  const user_id = req.session.user_id
-  if (!user_id){
-    res.status(401).send('You must be logged in to view the urls')
+  const user_id = req.session.user_id;
+  if (!user_id) {
+    res.status(401).send('You must be logged in to view the urls');
   }
-  const userUrls = urlsForUser(user_id, urlDatabase)
+  const userUrls = urlsForUser(user_id, urlDatabase);
   // const user = users[user_id];;
   const templateVars = { urls: userUrls, user: users[user_id]};
   res.render('urls_index', templateVars);
@@ -87,13 +58,12 @@ app.post("/urls", (req, res) => {
   let shortUrl = generateRandomString();
   //Adds both urls to database, while shortURL being the random generated one
   urlDatabase[shortUrl] = {
-    longURL: longUrl, 
+    longURL: longUrl,
     userID: req.session.user_id
   };
 
   const templateVars = {shortURL: shortUrl, longURL: longUrl, user: users[req.session.user_id]};
   res.render('urls_show', templateVars);
-  // res.redirect('/url/:shortURL');
 });
 // Registering a new user
 app.post('/register', (req, res) => {
@@ -104,7 +74,7 @@ app.post('/register', (req, res) => {
     
   if (!email || !password) {
     res.status(400).send('Please use a valid email or password');
-  } else if (emailChecker(email)) {
+  } else if (getUserByEmail(email, users)) {
     res.status(400).send('There is already an existing account with that email address.');
   } else {
     const user = {
@@ -112,10 +82,8 @@ app.post('/register', (req, res) => {
       email : email,
       password : bcrypt.hashSync(password, 10)
     };
-    // hashedPass = bcrypt.hashSync(req.body.password, 10);
     users[id] = user;
-    // res.cookie("user_id", {id: id, email: email});
-    req.session.user_id = id
+    req.session.user_id = id;
     res.redirect("/urls");
       
   }
@@ -123,20 +91,20 @@ app.post('/register', (req, res) => {
 });
 
 app.get("/urls/new", (req, res) => {
-  const templateVars = {user: null}
-  let user = req.session.user_id
-  if (!user){
-    return res.redirect('/login')
-  } 
-    templateVars.user = users[user];
-    res.render("urls_new", templateVars);
-    return;
+  const templateVars = {user: null};
+  let user = req.session.user_id;
+  if (!user) {
+    return res.redirect('/login');
+  }
+  templateVars.user = users[user];
+  res.render("urls_new", templateVars);
+  return;
 });
 //Get shortURL
 app.get('/urls/:shortURL', (req, res) => {
-  const user = req.session.user_id 
-  if (!user){
-    res.status(401).send('You must be logged in to access this page.')
+  const user = req.session.user_id;
+  if (!user) {
+    res.status(401).send('You must be logged in to access this page.');
   }
   const templateVars = { shortURL: req.params.shortURL, longURL: urlDatabase[req.params.shortURL].longURL, user: users[user]};
   res.render('urls_show', templateVars);
@@ -144,15 +112,15 @@ app.get('/urls/:shortURL', (req, res) => {
 
 //Delete button
 app.post(`/urls/:shortURL/delete`, (req, res) => {
-  const user = req.session.user_id
-  if (!user){
+  const user = req.session.user_id;
+  if (!user) {
     return res.status(401).send('You must be logged in to access this feature');
   }
-  const userUrls = urlsForUser(user, urlDatabase)
+  const userUrls = urlsForUser(user, urlDatabase);
   let shortURL = req.params.shortURL;
-  if (!Object.keys(userUrls).includes(shortURL)){
-    return res.status(401).send('You are not permitted to delete this URL')
-  };
+  if (!Object.keys(userUrls).includes(shortURL)) {
+    return res.status(401).send('You are not permitted to delete this URL');
+  }
   delete urlDatabase[req.params.shortURL];
   res.redirect("/urls");
 });
@@ -160,17 +128,17 @@ app.post(`/urls/:shortURL/delete`, (req, res) => {
   
 //Edit button
 app.post('/urls/:shortURL', (req, res) => {
-  const user_id = req.session.user_id
+  const user_id = req.session.user_id;
   if (!user_id) {
-    return res.status(401).send('You must be logged in to access this feature')
+    return res.status(401).send('You must be logged in to access this feature');
   }
-  const userUrls = urlsForUser(user_id, urlDatabase)
+  const userUrls = urlsForUser(user_id, urlDatabase);
   let shortURL = req.params.shortURL;
-  if (!Object.keys(userUrls).includes(shortURL)){
-    return res.status(401).send('You are not permitted to edit this URL')
-  };
+  if (!Object.keys(userUrls).includes(shortURL)) {
+    return res.status(401).send('You are not permitted to edit this URL');
+  }
   let longURL = req.body.longURL;
-  urlDatabase[req.params.shortURL].longURL = longURL
+  urlDatabase[req.params.shortURL].longURL = longURL;
   res.redirect('/urls');
 });
 
@@ -195,28 +163,19 @@ app.get('/login', (req, res) => {
 //Log user into tinyApp
 app.post('/login', (req, res) => {
   const email = req.body.email;
-  const password = req.body.password
-  const user = emailChecker(email);
+  const password = req.body.password;
+  const user = getUserByEmail(email, users);
   if (user) {
-    console.log('USER DATA#####', user);
-    if (bcrypt.compareSync (password , user.password)) {
-      req.session.user_id = user.id
-      res.redirect('/urls')
-      console.log('LOG IN PASSWORD >>>>>', user.password)
+    if (bcrypt.compareSync(password, user.password)) {
+      req.session.user_id = user.id;
+      res.redirect('/urls');
     } else {
-      res.send('Invalid password')
+      res.send('Invalid password');
     }
   } else {
     res.send('Invalid login credentials');
   }
 });
-
-// //Logout button
-// app.get('/logout', (req, res)=> {
-//   // req.session = null
-//   res.redirect('/urls');
-// });
-
 
 
 //Register button
@@ -227,10 +186,6 @@ app.post('/register', (req, res) => {
 
 //Register an account page should show up
 app.get('/register', (req, res) => {
-  // const userId = req.session.user_id
-  // if(userId){
-  //   res.redirect('/urls')
-  // }
   res.render('urls_registration',{user: null});
 });
 
