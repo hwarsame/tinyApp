@@ -5,6 +5,8 @@ const PORT = 8000; // default port 8000
 const bodyParser = require("body-parser");
 const cookieParser = require('cookie-parser');
 const cookieSession = require('cookie-session');
+const bcrypt = require('bcryptjs');
+
 app.use(bodyParser.urlencoded({ extended: true }));
 
 app.use(cookieParser());
@@ -49,13 +51,8 @@ const emailChecker = function(email) {
 const urlsForUser = function(id, urlDatabase) {
   let userUrls = {};
   for (const shortURL in urlDatabase) {
-    console.log('SHORT URL >>>>>>>>>>>>>>>>>>>>', shortURL);
-    console.log('URL DATABASE.ID >>>>>>>>>>>>>>>>>>>>', urlDatabase[shortURL].userID);
-    console.log('ID  >>>>>>>>>>>>>>>>>>>>', id);
-    
     if (urlDatabase[shortURL].userID=== id) {
       userUrls[shortURL] = urlDatabase[shortURL];
-      console.log('URLSUSER >>>>>>>>>>>>>>>>>>>>', userUrls);
     }
   }
   return userUrls;
@@ -79,7 +76,6 @@ app.get('/urls', (req, res) => {
   // const user = users[user_id];;
   const templateVars = { urls: urlDatabase, user: req.cookies.user_id};
   // const templateVars = { urls: urlsForUser(user_id.id, urlDatabase), user: req.cookies.user_id};
-  console.log('>>>>>>>>>>>>>>>>>>>>>>>>>1123333333300000', urlDatabase)
   res.render('urls_index', templateVars);
 });
 
@@ -88,7 +84,6 @@ app.post("/urls", (req, res) => {
   let shortUrl = generateRandomString();
   //Adds both urls to database, while shortURL being the random generated one
   urlDatabase[shortUrl] = {longURL, userID: req.cookies.user_id.id};
-  console.log('>>>>>>>>>>>>>>>>>>>>', urlDatabase);
   const templateVars = {shortURL: shortUrl, longURL: urlDatabase[shortUrl].longURL, user: req.cookies.user_id};
   res.render('urls_show', templateVars);
   // res.redirect('/url/:shortURL');
@@ -108,10 +103,10 @@ app.post('/register', (req, res) => {
     const user = {
       id : id,
       email : email,
-      password : password
+      password : bcrypt.hashSync(password, 10)
     };
+    // hashedPass = bcrypt.hashSync(req.body.password, 10);
     users[id] = user;
-    const cookieUser = user;
     res.cookie("user_id", {id: id, email: email});
     res.redirect("/urls");
       
@@ -136,8 +131,6 @@ app.get('/urls/:shortURL', (req, res) => {
     res.status(401).send('You must be logged in to access this page.')
   }
   const templateVars = { shortURL: req.params.shortURL, longURL: urlDatabase[req.params.shortURL].longURL, user: req.cookies.user_id};
-  // console.log('LONG URL IN GET>>', urlDatabase[req.params.shortURL]);
-  // console.log('>>>>>>>>>>>>>>>>>>>>>>>>!!!!!!!!!', urlDatabase);
   res.render('urls_show', templateVars);
 });
 
@@ -194,15 +187,16 @@ app.get('/login', (req, res) => {
 //Log user into tinyApp
 app.post('/login', (req, res) => {
   const email = req.body.email;
-  const password = req.body.password;
+  const password = req.body.password
   const user = emailChecker(email);
   if (user) {
-    // console.log('>>>>>>>>>>>>>>>>>>>>>>>>>',password, user.password);
-    if (password !== user.password) {
-      res.send('Invalid password');
+    console.log('USER DATA#####', user);
+    if (bcrypt.compareSync (password , user.password)) {
+      res.cookie('user_id', user)
+      res.redirect('/urls')
+      console.log('LOG IN PASSWORD >>>>>', user.password)
     } else {
-      res.cookie("user_id", user);
-      res.redirect("/urls");
+      res.send('Invalid password')
     }
   } else {
     res.send('Invalid login credentials');
