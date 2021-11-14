@@ -46,14 +46,20 @@ const emailChecker = function(email) {
   return null;
 };
 
-// const getUserEmail = (email, database) => {
-//   for (let user in database){
-//     if (database[user].email === email){
-//       return database[user];
-//     }
-//   }
-//   return undefined;
-// };
+const urlsForUser = function(id, urlDatabase) {
+  let userUrls = {};
+  for (const shortURL in urlDatabase) {
+    console.log('SHORT URL >>>>>>>>>>>>>>>>>>>>', shortURL);
+    console.log('URL DATABASE.ID >>>>>>>>>>>>>>>>>>>>', urlDatabase[shortURL].userID);
+    console.log('ID  >>>>>>>>>>>>>>>>>>>>', id);
+    
+    if (urlDatabase[shortURL].userID=== id) {
+      userUrls[shortURL] = urlDatabase[shortURL];
+      console.log('URLSUSER >>>>>>>>>>>>>>>>>>>>', userUrls);
+    }
+  }
+  return userUrls;
+};
 
 //will generate a random string of up to 6 characters for cookies, and shortURL
 function generateRandomString() {
@@ -72,6 +78,7 @@ app.get('/urls', (req, res) => {
   }
   // const user = users[user_id];;
   const templateVars = { urls: urlDatabase, user: req.cookies.user_id};
+  // const templateVars = { urls: urlsForUser(user_id.id, urlDatabase), user: req.cookies.user_id};
   console.log('>>>>>>>>>>>>>>>>>>>>>>>>>1123333333300000', urlDatabase)
   res.render('urls_index', templateVars);
 });
@@ -106,9 +113,6 @@ app.post('/register', (req, res) => {
     users[id] = user;
     const cookieUser = user;
     res.cookie("user_id", {id: id, email: email});
-    //console.log to see output
-    console.log(req.cookies.user_id);
-    console.log(users);
     res.redirect("/urls");
       
   }
@@ -125,22 +129,29 @@ app.get("/urls/new", (req, res) => {
     res.render("urls_new", templateVars);
     return;
 });
-
+//Get shortURL
 app.get('/urls/:shortURL', (req, res) => {
   const user = req.cookies.user_id 
   if (!user){
     res.status(401).send('You must be logged in to access this page.')
   }
-  const templateVars = { shortURL: req.params.shortURL, longURL: urlDatabase[req.params.shortURL], user: req.cookies.user_id};
-  console.log('>>>>>>>>>>>>>>>>>>>>>>>>!!!!!!!!!', urlDatabase);
+  const templateVars = { shortURL: req.params.shortURL, longURL: urlDatabase[req.params.shortURL].longURL, user: req.cookies.user_id};
+  // console.log('LONG URL IN GET>>', urlDatabase[req.params.shortURL]);
+  // console.log('>>>>>>>>>>>>>>>>>>>>>>>>!!!!!!!!!', urlDatabase);
   res.render('urls_show', templateVars);
 });
 
 //Delete button
 app.post(`/urls/:shortURL/delete`, (req, res) => {
-  // GET short URL
-  // Use the short URL to delete the data from database
-  // redirect to urls page
+  const user = req.cookies.user_id
+  if (!user){
+    return res.status(401).send('You must be logged in to access this feature');
+  }
+  const userUrls = urlsForUser(user.id, urlDatabase)
+  let shortURL = req.params.shortURL;
+  if (!Object.keys(userUrls).includes(shortURL)){
+    return res.status(401).send('You are not permitted to delete this URL')
+  };
   delete urlDatabase[req.params.shortURL];
   res.redirect("/urls");
 });
@@ -148,10 +159,17 @@ app.post(`/urls/:shortURL/delete`, (req, res) => {
   
 //Edit button
 app.post('/urls/:shortURL', (req, res) => {
-  //get the short URL
-  const shortURL = req.params.shortURL;
+  const user_id = req.cookies.user_id
+  if (!user_id) {
+    return res.status(401).send('You must be logged in to access this feature')
+  }
+  const userUrls = urlsForUser(user_id.id, urlDatabase)
+  let shortURL = req.params.shortURL;
+  if (!Object.keys(userUrls).includes(shortURL)){
+    return res.status(401).send('You are not permitted to edit this URL')
+  };
   let longURL = req.body.longURL;
-  urlDatabase[shortURL] = longURL;
+  urlDatabase[req.params.shortURL].longURL = longURL
   res.redirect('/urls');
 });
 
