@@ -11,9 +11,12 @@
       </div>
     </div>
     <% if  (user) { %>
-      <a class = "navbar-brand" ><p>Logged in as:   <%=user.email%></p> 
+      <a class = "navbar-brand" ><p>Logged in as:  <%=user.email%></p> 
       </a>
-    <a class = "navbar-brand" href="/logout"> <button type ="submit" button class = "btn-primary"> Log Out</button></a>
+    <!-- <a class = "navbar-brand" href="/logout"> <button type ="submit" button class = "btn-primary"> Log Out</button></a> -->
+      <form method="POST" action="/logout" > 
+      <button type ="submit" button class="btn-primary"> Log Out</button> 
+      </form> 
     <% }  else { %>
       <!-- Login button here -->
       <a class = "navbar-brand" href = "/login"> <button type = "submit" button class= "btn-primary"> Log In</button></a>
